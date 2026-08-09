@@ -1,0 +1,353 @@
+/**
+ * أنماط عامة — RTL + طابع عُماني كلاسيكي سلس
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  direction: rtl;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(10, 10, 10, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.025) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% -10%, rgba(10, 10, 10, 0.05), transparent 50%);
+  background-size: 32px 32px, 32px 32px, 100% 100%;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.container {
+  width: min(100% - 2rem, var(--max-width));
+  margin-inline: auto;
+}
+
+/* رأس الموقع */
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.brand__mark {
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--ink);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition);
+}
+
+.brand:hover .brand__mark {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.brand__mark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.brand__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.01em;
+}
+
+.brand__subtitle {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.header-link {
+  font-size: 0.9rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid transparent;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.header-link:hover {
+  border-color: var(--ink);
+  background: var(--paper-muted);
+}
+
+/* أزرار */
+.btn {
+  appearance: none;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.78rem 1.4rem;
+  cursor: pointer;
+  border-radius: var(--radius);
+  letter-spacing: 0.01em;
+  transition: background var(--transition), color var(--transition),
+    transform var(--transition), box-shadow var(--transition);
+}
+
+.btn:hover {
+  background: var(--ink-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn--ghost:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn--danger:hover {
+  background: var(--danger);
+  color: var(--paper);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* حقول */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.form-group .hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.form-group .hint.is-ok {
+  color: var(--ink);
+}
+
+.form-group .hint.is-error {
+  color: var(--danger);
+}
+
+.form-control {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.85rem 0.95rem;
+  outline: none;
+  border-radius: var(--radius);
+  transition: border-color var(--transition), box-shadow var(--transition),
+    background var(--transition);
+}
+
+.form-control:hover {
+  border-color: #c8c8c4;
+}
+
+.form-control:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.06);
+  background: #fff;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.choice {
+  position: relative;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice span {
+  display: inline-block;
+  min-width: 5.2rem;
+  text-align: center;
+  border: 1.5px solid var(--line);
+  padding: 0.62rem 1rem;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background var(--transition), color var(--transition),
+    border-color var(--transition), transform var(--transition);
+}
+
+.choice span:hover {
+  border-color: var(--ink-soft);
+}
+
+.choice input:checked + span {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.choice input:focus-visible + span {
+  box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.1);
+}
+
+/* تنبيهات */
+.alert {
+  border: 1.5px solid var(--line);
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+  display: none;
+  border-radius: var(--radius);
+}
+
+.alert.is-visible {
+  display: block;
+  animation: rise-in 0.35s ease both;
+}
+
+.alert--success {
+  border-color: #1f7a3f;
+  background: #eaf7ef;
+  color: #146c34;
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.alert--error {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: #fff7f7;
+}
+
+.alert--info {
+  background: var(--paper-muted);
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 3rem;
+  padding: 1.4rem 0 2.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.75s var(--transition) both;
+}
+
+.animate-rise-delay {
+  animation: rise-in 0.9s 0.1s both;
+}
+
+@media (max-width: 720px) {
+  .site-header__inner {
+    flex-wrap: wrap;
+  }
+}

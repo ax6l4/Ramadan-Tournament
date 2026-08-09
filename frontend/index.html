@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>فريق الروضة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/variables.css" />
+    <link rel="stylesheet" href="./css/main.css" />
+    <link rel="stylesheet" href="./css/registration.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2 L20 8 L20 16 L12 22 L4 16 L4 8 Z" />
+              <path d="M12 6 L16 9 L16 15 L12 18 L8 15 L8 9 Z" />
+            </svg>
+          </div>
+          <div class="brand__text">
+            <span class="brand__title" id="site-title">فريق الروضة</span>
+            <span class="brand__subtitle">المسابقات الرمضانية</span>
+          </div>
+        </div>
+        <a class="header-link" href="./admin/login.html">دخول الإدارة</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero__ornament" aria-hidden="true"></div>
+
+      <!-- الشاشة الأولى: عنوان كبير + مستطيل تسجيل -->
+      <section class="landing" id="landing-screen">
+        <div class="container landing__inner animate-rise">
+          <p class="landing__eyebrow">سلطنة عُمان</p>
+          <h1 class="landing__title">
+            المسابقات الرمضانية
+            <span>لفريق الروضة</span>
+          </h1>
+          <div class="landing__divider"></div>
+          <p class="landing__lead">شارك معنا في أجواء رياضية تراثية أصيلة</p>
+
+          <button class="register-rect" type="button" id="open-register-btn">
+            تسجيل
+          </button>
+        </div>
+      </section>
+
+      <!-- واجهة التسجيل تظهر بعد الضغط على المستطيل -->
+      <section class="register-view" id="register-view" hidden>
+        <div class="container register-view__inner">
+          <button class="back-link" type="button" id="back-to-landing-btn">
+            ← العودة للرئيسية
+          </button>
+
+          <section class="register-panel animate-rise" id="register-panel">
+            <div class="register-panel__header">
+              <h2>تسجيل المشاركة</h2>
+              <p>لا حاجة لإنشاء حساب — عبّئ البيانات ثم أكّد التسجيل</p>
+            </div>
+
+            <div id="form-alert" class="alert" role="alert"></div>
+
+            <form id="registration-form" class="register-form" novalidate>
+              <div class="form-group">
+                <label for="full_name">الاسم الكامل مع القبيلة</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  id="full_name"
+                  name="full_name"
+                  placeholder="عبدالرحمن فهد سالم علي الزيدي"
+                  required
+                  autocomplete="name"
+                />
+                <span class="hint" id="name-hint"
+                  >خمسة أسماء بالضبط — مثال: عبدالرحمن فهد سالم علي الزيدي</span
+                >
+                <div class="name-meter">
+                  <span>عدد الأسماء المدخلة</span>
+                  <strong id="name-count">0 / 5</strong>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">رقم الهاتف</label>
+                <input
+                  class="form-control"
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  placeholder="9689xxxxxxx"
+                  required
+                  autocomplete="tel"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>هل أنت قائد فريق؟</label>
+                <div class="choice-row">
+                  <label class="choice">
+                    <input type="radio" name="is_team_leader" value="yes" />
+                    <span>نعم</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="is_team_leader" value="no" checked />
+                    <span>لا</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>الرياضة</label>
+                <div class="choice-row">
+                  <label class="choice">
+                    <input type="radio" name="sport" value="football" required />
+                    <span>كرة قدم</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="sport" value="volleyball" />
+                    <span>كرة طائرة</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="sport" value="both" />
+                    <span>الاثنتان</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="register-form__actions">
+                <button class="btn" type="submit" id="submit-btn">تأكيد التسجيل</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="register-panel closed-state" id="closed-state" hidden>
+            <h2>التسجيل مغلق</h2>
+            <p id="closed-message">التسجيل مغلق حالياً. يرجى المحاولة لاحقاً.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">فريق الروضة</div>
+    </footer>
+
+    <script src="./js/api.js"></script>
+    <script src="./js/registration.js"></script>
+  </body>
+</html>

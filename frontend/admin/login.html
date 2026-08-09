@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>دخول الإدارة | فريق الروضة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/main.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="../index.html">
+          <div class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2 L20 8 L20 16 L12 22 L4 16 L4 8 Z" />
+              <path d="M12 6 L16 9 L16 15 L12 18 L8 15 L8 9 Z" />
+            </svg>
+          </div>
+          <div class="brand__text">
+            <span class="brand__title">فريق الروضة</span>
+            <span class="brand__subtitle">لوحة الإدارة</span>
+          </div>
+        </a>
+        <a class="header-link" href="../index.html">العودة للتسجيل</a>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <div class="container">
+        <section class="admin-card animate-rise">
+          <h1>دخول الإدارة</h1>
+          <p class="lead">أدخل بياناتك للوصول إلى لوحة التحكم</p>
+
+          <div id="login-alert" class="alert" role="alert"></div>
+
+          <form id="login-form" novalidate>
+            <div class="form-group">
+              <label for="username">اسم المستخدم</label>
+              <input
+                class="form-control"
+                type="text"
+                id="username"
+                name="username"
+                required
+                autocomplete="username"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="password">كلمة المرور</label>
+              <input
+                class="form-control"
+                type="password"
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+
+            <button class="btn" type="submit" id="login-btn">دخول</button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/admin-login.js"></script>
+  </body>
+</html>

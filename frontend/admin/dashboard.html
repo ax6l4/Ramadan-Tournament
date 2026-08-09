@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة التحكم | فريق الروضة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/main.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2 L20 8 L20 16 L12 22 L4 16 L4 8 Z" />
+              <path d="M12 6 L16 9 L16 15 L12 18 L8 15 L8 9 Z" />
+            </svg>
+          </div>
+          <div class="brand__text">
+            <span class="brand__title">لوحة التحكم</span>
+            <span class="brand__subtitle" id="admin-email">أدمن</span>
+          </div>
+        </div>
+        <div class="dashboard-actions">
+          <a class="btn btn--ghost" href="../index.html">عرض الموقع</a>
+          <button class="btn btn--ghost" type="button" id="logout-btn">تسجيل الخروج</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+      <div class="container">
+        <div class="dashboard-head animate-rise">
+          <div>
+            <h1>إدارة فريق الروضة</h1>
+            <p>اللاعبون، التسجيل، والإعدادات في مكان واحد</p>
+          </div>
+          <div class="dashboard-actions">
+            <button class="btn btn--ghost" type="button" id="export-btn">تنزيل قائمة اللاعبين</button>
+            <button class="btn btn--danger" type="button" id="delete-all-btn">حذف الجميع</button>
+          </div>
+        </div>
+
+        <div id="dashboard-alert" class="alert" role="alert" style="margin-bottom: 1rem"></div>
+
+        <!-- الإعدادات -->
+        <section class="panel animate-rise">
+          <h2>إعدادات الموقع</h2>
+          <div class="settings-grid">
+            <div class="site-lock-box">
+              <div class="site-lock-status">
+                <span>حالة الموقع:</span>
+                <strong id="site-status-label">جارٍ التحميل...</strong>
+              </div>
+              <div class="site-lock-actions">
+                <button class="btn btn--open" type="button" id="open-site-btn">
+                  فتح الموقع
+                </button>
+                <button class="btn btn--lock" type="button" id="lock-site-btn">
+                  قفل الموقع
+                </button>
+              </div>
+              <p class="hint">
+                عند القفل تظهر للمستخدمين رسالة «التسجيل مغلق» ولا يمكنهم التسجيل
+              </p>
+            </div>
+
+            <!-- يبقى مخفياً لمزامنة الحالة داخلياً -->
+            <input type="checkbox" id="registration-open" hidden />
+
+            <div class="form-group">
+              <label for="site-title-input">عنوان الموقع</label>
+              <input class="form-control" type="text" id="site-title-input" />
+            </div>
+
+            <div class="form-group">
+              <label for="closed-message-input">رسالة إغلاق التسجيل</label>
+              <textarea class="form-control" id="closed-message-input" rows="2"></textarea>
+            </div>
+
+            <button class="btn" type="button" id="save-settings-btn">حفظ الإعدادات</button>
+          </div>
+        </section>
+
+        <!-- الإحصاءات واللاعبون -->
+        <section class="panel animate-rise-delay">
+          <h2>اللاعبون المسجلون</h2>
+
+          <div class="stats">
+            <div class="stat">
+              <strong id="stat-count">0</strong>
+              <span>الإجمالي</span>
+            </div>
+            <div class="stat">
+              <strong id="stat-leaders">0</strong>
+              <span>قادة فرق</span>
+            </div>
+            <div class="stat">
+              <strong id="stat-football">0</strong>
+              <span>كرة قدم</span>
+            </div>
+            <div class="stat">
+              <strong id="stat-volleyball">0</strong>
+              <span>كرة طائرة</span>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input
+              class="form-control"
+              type="search"
+              id="search-input"
+              placeholder="ابحث بالاسم أو رقم الهاتف"
+            />
+            <button class="btn" type="button" id="search-btn">بحث</button>
+            <button class="btn btn--ghost" type="button" id="refresh-btn">تحديث</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="players-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>الاسم الكامل</th>
+                  <th>الهاتف</th>
+                  <th>قائد</th>
+                  <th>قدم</th>
+                  <th>طائرة</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="players-body">
+                <tr>
+                  <td colspan="7">جارٍ التحميل...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- إضافة يدوية -->
+        <section class="panel">
+          <h2>إضافة لاعب يدوياً</h2>
+          <form id="manual-form" class="manual-form" novalidate>
+            <div class="manual-form__grid">
+              <div class="form-group">
+                <label for="manual_full_name">الاسم الكامل (خمسة أسماء)</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  id="manual_full_name"
+                  name="full_name"
+                  placeholder="عبدالرحمن فهد سالم علي الزيدي"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="manual_phone">رقم الهاتف</label>
+                <input class="form-control" type="tel" id="manual_phone" name="phone" required />
+              </div>
+              <div class="form-group">
+                <label>قائد فريق؟</label>
+                <div class="choice-row">
+                  <label class="choice">
+                    <input type="radio" name="is_team_leader" value="yes" />
+                    <span>نعم</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="is_team_leader" value="no" checked />
+                    <span>لا</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>الرياضة</label>
+                <div class="choice-row">
+                  <label class="choice">
+                    <input type="radio" name="sport" value="football" checked />
+                    <span>قدم</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="sport" value="volleyball" />
+                    <span>طائرة</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="sport" value="both" />
+                    <span>كلاهما</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <button class="btn" type="submit">إضافة اللاعب</button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/admin-dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "fariq-alrawdha",
+  "version": "1.0.0",
+  "description": "المسابقات الرمضانية لفريق الروضة",
+  "private": true,
+  "scripts": {
+    "start": "node backend/server.js",
+    "postinstall": "npm install --prefix backend"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
