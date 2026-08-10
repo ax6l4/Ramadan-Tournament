@@ -1,29 +1,168 @@
 /**
  * طبقة الوصول للبيانات
  * - محلياً: SQLite (better-sqlite3)
- * - على الاستضافة: PostgreSQL عبر DATABASE_URL (دائمة حتى مع إغلاق اللابتوب)
+ * - على الاستضافة: PostgreSQL عبر process.env.DATABASE_URL
  */
 
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns');
 const bcrypt = require('bcrypt');
 const config = require('../config/config');
 
-const usePostgres = Boolean(process.env.DATABASE_URL);
+// تفضيل IPv4 يقلل أخطاء DNS على بعض بيئات Render
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
+const usePostgres = Boolean(
+  process.env.DATABASE_URL || process.env.EXTERNAL_DATABASE_URL
+);
 
 let sqliteDb = null;
 let pgPool = null;
+
+/**
+ * تنظيف قيمة DATABASE_URL من علامات الاقتباس أو المسافات الزائدة
+ * @param {string} value
+ * @returns {string}
+ */
+function normalizeDatabaseUrl(value) {
+  if (!value || typeof value !== 'string') {
+    return '';
+  }
+
+  let url = value.trim();
+
+  // إزالة اقتباس محيط إن وُجد من لوحة التحكم
+  if (
+    (url.startsWith('"') && url.endsWith('"')) ||
+    (url.startsWith("'") && url.endsWith("'"))
+  ) {
+    url = url.slice(1, -1).trim();
+  }
+
+  return url;
+}
+
+/**
+ * اختيار أفضل رابط اتصال متاح من متغيرات البيئة
+ * يفضّل EXTERNAL_DATABASE_URL إن وُجد (hostname كامل .render.com)
+ * @returns {string}
+ */
+function resolveDatabaseUrl() {
+  const externalUrl = normalizeDatabaseUrl(process.env.EXTERNAL_DATABASE_URL);
+  const primaryUrl = normalizeDatabaseUrl(process.env.DATABASE_URL);
+
+  // الرابط الخارجي يعمل حتى مع اختلاف المنطقة
+  if (externalUrl) {
+    return externalUrl;
+  }
+
+  return primaryUrl;
+}
+
+/**
+ * هل الـ hostname يبدو كـ internal host ناقص على Render؟
+ * مثال غير صالح للـ DNS العام: dpg-xxxxx-a
+ * مثال صالح: dpg-xxxxx-a.frankfurt-postgres.render.com
+ * @param {string} databaseUrl
+ * @returns {boolean}
+ */
+function isLikelyIncompleteRenderHost(databaseUrl) {
+  try {
+    const parsed = new URL(databaseUrl);
+    const host = parsed.hostname || '';
+    return /^dpg-[a-z0-9]+-a$/i.test(host);
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * إنشاء Pool متوافق مع Render PostgreSQL
+ * @param {string} databaseUrl
+ */
+function createPgPool(databaseUrl) {
+  const { Pool } = require('pg');
+
+  const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+  const forceSslOff = process.env.PGSSL === 'false';
+  const forceSslOn = process.env.PGSSL === 'true';
+
+  // Render يتطلب SSL غالباً للرابط الخارجي، وهو آمن أيضاً للداخلي
+  const useSsl = forceSslOn || (!forceSslOff && (isProduction || databaseUrl.includes('render.com')));
+
+  /** @type {import('pg').PoolConfig} */
+  const poolConfig = {
+    connectionString: databaseUrl,
+    connectionTimeoutMillis: 15000,
+    idleTimeoutMillis: 30000,
+    max: 10,
+  };
+
+  if (useSsl) {
+    poolConfig.ssl = { rejectUnauthorized: false };
+  }
+
+  // سجل تشخيصي بدون كلمة المرور
+  try {
+    const parsed = new URL(databaseUrl);
+    console.log(
+      `[DB] Connecting to PostgreSQL host="${parsed.hostname}" db="${parsed.pathname.replace('/', '')}" ssl=${Boolean(useSsl)}`
+    );
+  } catch (error) {
+    console.warn('[DB] DATABASE_URL could not be parsed as a URL');
+  }
+
+  if (isLikelyIncompleteRenderHost(databaseUrl)) {
+    console.warn(
+      '[DB] WARNING: DATABASE_URL uses an internal Render hostname without a domain. ' +
+        'If startup fails with ENOTFOUND, set EXTERNAL_DATABASE_URL to the External Database URL from the Render dashboard, ' +
+        'and ensure the web service and Postgres are in the SAME region.'
+    );
+  }
+
+  return new Pool(poolConfig);
+}
 
 /**
  * تهيئة قاعدة البيانات حسب البيئة
  */
 async function initDatabase() {
   if (usePostgres) {
-    const { Pool } = require('pg');
-    pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.PGSSL === 'false' ? false : { rejectUnauthorized: false },
-    });
+    const databaseUrl = resolveDatabaseUrl();
+
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is missing. Set it to your Render Postgres connection string.');
+    }
+
+    pgPool = createPgPool(databaseUrl);
+
+    try {
+      // اختبار الاتصال مبكراً لرسالة خطأ أوضح
+      await pgPool.query('SELECT 1');
+    } catch (error) {
+      const hostHint = (() => {
+        try {
+          return new URL(databaseUrl).hostname;
+        } catch (parseError) {
+          return '(unparseable host)';
+        }
+      })();
+
+      if (error && error.code === 'ENOTFOUND') {
+        throw new Error(
+          `PostgreSQL host could not be resolved (${hostHint}). ` +
+            `On Render: 1) put Web Service + Postgres in the SAME region, ` +
+            `2) or set EXTERNAL_DATABASE_URL to the External Database URL from the database Info page. ` +
+            `Original error: ${error.message}`
+        );
+      }
+
+      throw error;
+    }
+
     await createPostgresTables();
     await seedAdminAndSettings();
     console.log('[DB] Connected to PostgreSQL');

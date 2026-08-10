@@ -1,4 +1,8 @@
 # نشر موقع فريق الروضة — رابط دائم يعمل حتى مع إغلاق اللابتوب
+#
+# مهم: خدمة الويب وقاعدة البيانات يجب أن تكونا في نفس المنطقة
+# وإلا يظهر الخطأ: getaddrinfo ENOTFOUND dpg-xxxxx-a
+
 services:
   - type: web
     name: fariq-alrawdha
@@ -6,7 +10,8 @@ services:
     plan: free
     region: frankfurt
     buildCommand: npm install --prefix backend
-    startCommand: node backend/server.js
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,6 +21,7 @@ services:
         value: Abdul Rahman
       - key: ADMIN_PASSWORD
         value: Aa91141702
+      # Internal connection string (يعمل فقط إذا كانت الخدمة والـ DB في نفس المنطقة)
       - key: DATABASE_URL
         fromDatabase:
           name: fariq-alrawdha-db
@@ -24,5 +30,6 @@ services:
 databases:
   - name: fariq-alrawdha-db
     plan: free
+    region: frankfurt
     databaseName: alrawdha
     user: alrawdha
