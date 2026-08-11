@@ -1,6 +1,6 @@
 /**
- * كشف تسجيل اللاعبين بصيغة Word
- * نفس أعمدة لوحة التحكم (بدون الهاتف) على صفحة أفقية عربية
+ * Official landscape Word report: one table row per player.
+ * Mixed Arabic/English cells keep names RTL and status/sport centered.
  */
 
 const {
@@ -21,8 +21,8 @@ const {
   WidthType,
 } = require('docx');
 
-const ARABIC_FONT = 'Arial';
-const BORDER = { style: BorderStyle.SINGLE, size: 4, color: 'C8C8C4' };
+const FONT = 'Arial';
+const BORDER = { style: BorderStyle.SINGLE, size: 8, color: '1A1A1A' };
 const CELL_BORDERS = {
   top: BORDER,
   bottom: BORDER,
@@ -30,11 +30,18 @@ const CELL_BORDERS = {
   right: BORDER,
 };
 
-function textRun(text, options = {}) {
+function sportLabel(sport) {
+  if (sport === 'football') return 'Football';
+  if (sport === 'volleyball') return 'Volleyball';
+  if (sport === 'both') return 'Football & Volleyball';
+  return String(sport || '-');
+}
+
+function run(text, options = {}) {
   return new TextRun({
     text,
-    font: ARABIC_FONT,
-    rightToLeft: true,
+    font: FONT,
+    rightToLeft: options.rtl !== false,
     size: options.size || 22,
     bold: Boolean(options.bold),
     color: options.color || '111111',
@@ -43,10 +50,10 @@ function textRun(text, options = {}) {
 
 function cellParagraph(text, options = {}) {
   return new Paragraph({
-    bidirectional: true,
+    bidirectional: options.rtl !== false,
     alignment: options.alignment || AlignmentType.CENTER,
-    spacing: { before: 60, after: 60 },
-    children: [textRun(text, options)],
+    spacing: { before: 80, after: 80 },
+    children: [run(text, options)],
   });
 }
 
@@ -58,38 +65,55 @@ function makeCell(text, options = {}) {
     shading: options.shading
       ? { type: ShadingType.CLEAR, fill: options.shading }
       : undefined,
+    margins: { top: 60, bottom: 60, left: 80, right: 80 },
     children: [cellParagraph(text, options)],
   });
 }
 
-function mark(isSelected) {
-  return isSelected ? '✓' : '✗';
-}
-
 async function buildPlayersDocx({ players, brandName }) {
   const generatedAt = new Date();
-  const dateAr = generatedAt.toLocaleString('ar-OM', {
+  const dateLabel = generatedAt.toLocaleString('en-GB', {
     dateStyle: 'full',
     timeStyle: 'short',
   });
   const brand = brandName || 'فريق الروضة';
 
-  // عرض أفقي: الرقم | الاسم | قائد | قدم | طائرة
-  const colWidths = [900, 7200, 1600, 1600, 1600];
+  // Landscape widths: # | Player Name | Team Captain | Sport
+  const colWidths = [1100, 7200, 2400, 3600];
+  const headerFill = '1A1A1A';
+  const headerColor = 'FFFFFF';
 
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
-      makeCell('#', { width: colWidths[0], bold: true, shading: 'F4F4F2' }),
-      makeCell('الاسم الكامل', {
+      makeCell('#', {
+        width: colWidths[0],
+        bold: true,
+        shading: headerFill,
+        color: headerColor,
+        rtl: false,
+      }),
+      makeCell('Player Name', {
         width: colWidths[1],
         bold: true,
-        shading: 'F4F4F2',
-        alignment: AlignmentType.RIGHT,
+        shading: headerFill,
+        color: headerColor,
+        rtl: false,
       }),
-      makeCell('قائد', { width: colWidths[2], bold: true, shading: 'F4F4F2' }),
-      makeCell('قدم', { width: colWidths[3], bold: true, shading: 'F4F4F2' }),
-      makeCell('طائرة', { width: colWidths[4], bold: true, shading: 'F4F4F2' }),
+      makeCell('Team Captain', {
+        width: colWidths[2],
+        bold: true,
+        shading: headerFill,
+        color: headerColor,
+        rtl: false,
+      }),
+      makeCell('Sport', {
+        width: colWidths[3],
+        bold: true,
+        shading: headerFill,
+        color: headerColor,
+        rtl: false,
+      }),
     ],
   });
 
@@ -101,21 +125,22 @@ async function buildPlayersDocx({ players, brandName }) {
 
     return new TableRow({
       children: [
-        makeCell(String(index + 1), { width: colWidths[0] }),
+        makeCell(String(index + 1), {
+          width: colWidths[0],
+          rtl: false,
+        }),
         makeCell(player.full_name || '-', {
           width: colWidths[1],
           alignment: AlignmentType.RIGHT,
+          rtl: true,
         }),
-        makeCell(mark(isLeader), { width: colWidths[2], bold: true, size: 28 }),
-        makeCell(mark(player.plays_football), {
+        makeCell(isLeader ? 'Yes' : 'No', {
+          width: colWidths[2],
+          rtl: false,
+        }),
+        makeCell(sportLabel(player.sport), {
           width: colWidths[3],
-          bold: true,
-          size: 28,
-        }),
-        makeCell(mark(player.plays_volleyball), {
-          width: colWidths[4],
-          bold: true,
-          size: 28,
+          rtl: false,
         }),
       ],
     });
@@ -124,12 +149,10 @@ async function buildPlayersDocx({ players, brandName }) {
   const emptyRow = new TableRow({
     children: [
       new TableCell({
-        columnSpan: 5,
+        columnSpan: 4,
         borders: CELL_BORDERS,
         children: [
-          cellParagraph('لا يوجد لاعبون مسجلون حالياً.', {
-            italics: true,
-          }),
+          cellParagraph('No players are registered yet.', { rtl: false }),
         ],
       }),
     ],
@@ -137,32 +160,48 @@ async function buildPlayersDocx({ players, brandName }) {
 
   const table = new Table({
     visuallyRightToLeft: true,
-    width: { size: 12900, type: WidthType.DXA },
+    width: { size: 14300, type: WidthType.DXA },
     columnWidths: colWidths,
     rows: [headerRow, ...(players.length ? bodyRows : [emptyRow])],
   });
 
   const titleBlock = [
     new Paragraph({
-      bidirectional: true,
       alignment: AlignmentType.CENTER,
       spacing: { after: 80 },
-      children: [textRun('تسجيل لاعبي المسابقات الرمضانية', { bold: true, size: 36 })],
+      children: [
+        run('Ramadan Tournament Player Registration', {
+          bold: true,
+          size: 36,
+          rtl: false,
+        }),
+      ],
     }),
     new Paragraph({
       bidirectional: true,
       alignment: AlignmentType.CENTER,
       spacing: { after: 60 },
-      children: [textRun(brand, { bold: true, size: 26 })],
+      children: [run(brand, { bold: true, size: 28, rtl: true })],
     }),
     new Paragraph({
-      bidirectional: true,
       alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
+      spacing: { after: 40 },
       children: [
-        textRun(`تاريخ الإصدار: ${dateAr}  —  العدد: ${players.length}`, {
+        run(`Generated: ${dateLabel}`, {
           size: 20,
           color: '555555',
+          rtl: false,
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 280 },
+      children: [
+        run(`Total players: ${players.length}`, {
+          size: 20,
+          color: '555555',
+          rtl: false,
         }),
       ],
     }),
@@ -170,12 +209,12 @@ async function buildPlayersDocx({ players, brandName }) {
 
   const document = new Document({
     creator: brand,
-    title: 'تسجيل لاعبي المسابقات الرمضانية',
+    title: 'Ramadan Tournament Player Registration',
+    description: 'Official player registration report',
     styles: {
       default: {
         document: {
-          run: { font: ARABIC_FONT, rightToLeft: true },
-          paragraph: { bidirectional: true },
+          run: { font: FONT },
         },
       },
     },
@@ -184,19 +223,19 @@ async function buildPlayersDocx({ players, brandName }) {
         properties: {
           page: {
             size: { orientation: PageOrientation.LANDSCAPE },
-            margin: { top: 560, bottom: 560, left: 720, right: 720 },
+            margin: { top: 720, bottom: 640, left: 720, right: 720 },
           },
         },
         headers: {
           default: new Header({
             children: [
               new Paragraph({
-                bidirectional: true,
                 alignment: AlignmentType.CENTER,
                 children: [
-                  textRun('المسابقات الرمضانية — كشف التسجيل', {
+                  run('Official Tournament Registration Report', {
                     size: 18,
                     color: '666666',
+                    rtl: false,
                   }),
                 ],
               }),
@@ -209,7 +248,13 @@ async function buildPlayersDocx({ players, brandName }) {
               new Paragraph({
                 bidirectional: true,
                 alignment: AlignmentType.CENTER,
-                children: [textRun(`${brand} — وثيقة رسمية`, { size: 16, color: '777777' })],
+                children: [
+                  run(`${brand}  —  Confidential`, {
+                    size: 16,
+                    color: '777777',
+                    rtl: true,
+                  }),
+                ],
               }),
             ],
           }),
