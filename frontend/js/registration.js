@@ -16,22 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const closedMessageEl = document.getElementById('closed-message');
   const submitBtn = document.getElementById('submit-btn');
   const fullNameInput = document.getElementById('full_name');
-  const nameCountEl = document.getElementById('name-count');
   const nameHintEl = document.getElementById('name-hint');
 
   let registrationOpen = true;
 
   initPage();
-  updateNameMeter();
+  updateNameHint();
 
-  fullNameInput?.addEventListener('input', updateNameMeter);
+  fullNameInput?.addEventListener('input', updateNameHint);
 
-  // فتح واجهة التسجيل من المستطيل
   openRegisterBtn?.addEventListener('click', () => {
     showRegisterView();
   });
 
-  // العودة للشاشة الأولى
   backToLandingBtn?.addEventListener('click', () => {
     showLandingView();
   });
@@ -48,27 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
       sport: String(formData.get('sport') || ''),
     };
 
-    const nameParts = payload.full_name.split(/\s+/).filter(Boolean);
-
-    if (/[A-Za-z]/.test(payload.full_name)) {
-      showAlert(
-        alertBox,
-        'الاسم يجب أن يكون باللغة العربية فقط — غير مسموح بالإنجليزية',
-        'error'
-      );
+    const nameCheck = ArabicNameValidator.validateArabicPersonName(payload.full_name);
+    if (!nameCheck.valid) {
+      showAlert(alertBox, nameCheck.message, 'error');
+      updateNameHint();
       fullNameInput?.focus();
       return;
     }
-
-    if (nameParts.length !== 5) {
-      showAlert(
-        alertBox,
-        'يجب إدخال خمسة أسماء بالضبط (مثال: عبدالرحمن فهد سالم علي الزيدي)',
-        'error'
-      );
-      fullNameInput?.focus();
-      return;
-    }
+    payload.full_name = nameCheck.value;
 
     if (!payload.phone) {
       showAlert(alertBox, 'رقم الهاتف مطلوب', 'error');
@@ -90,12 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       form.reset();
-      updateNameMeter();
+      updateNameHint();
       showAlert(alertBox, 'لقد تم التسجيل بنجاح', 'success');
     } catch (error) {
       const message =
         error.status === 409
-          ? 'هذا الاسم الخماسي مسجّل مسبقاً — لا يمكن تكراره'
+          ? 'هذا الاسم مسجّل مسبقاً — لا يمكن تكراره'
           : error.message;
       showAlert(alertBox, message, 'error');
     } finally {
@@ -104,9 +88,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  /**
-   * إظهار واجهة التسجيل وإخفاء الشاشة الأولى
-   */
+  function updateNameHint() {
+    if (!nameHintEl) return;
+
+    const raw = String(fullNameInput?.value || '');
+    nameHintEl.classList.remove('is-ok', 'is-error');
+
+    if (!raw.trim()) {
+      nameHintEl.textContent = 'اكتب اسماً عربياً حقيقياً مثل: محمد أحمد الكندي';
+      return;
+    }
+
+    const result = ArabicNameValidator.validateArabicPersonName(raw);
+    if (result.valid) {
+      nameHintEl.textContent = 'الاسم صحيح';
+      nameHintEl.classList.add('is-ok');
+      return;
+    }
+
+    nameHintEl.textContent = result.message;
+    nameHintEl.classList.add('is-error');
+  }
+
   function showRegisterView() {
     landingScreen?.classList.add('is-hidden');
     if (registerView) registerView.hidden = false;
@@ -123,47 +126,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /**
-   * العودة للعنوان الكبير ومستطيل التسجيل
-   */
   function showLandingView() {
     landingScreen?.classList.remove('is-hidden');
     if (registerView) registerView.hidden = true;
     hideAlert(alertBox);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function updateNameMeter() {
-    const value = String(fullNameInput?.value || '')
-      .trim()
-      .replace(/\s+/g, ' ');
-    const count = value ? value.split(' ').filter(Boolean).length : 0;
-
-    if (nameCountEl) {
-      nameCountEl.textContent = `${count} / 5`;
-    }
-
-    if (!nameHintEl) return;
-
-    nameHintEl.classList.remove('is-ok', 'is-error');
-
-    if (count === 0) {
-      nameHintEl.textContent =
-        'خمسة أسماء عربية بالضبط — غير مسموح بالإنجليزية';
-      return;
-    }
-
-    if (count === 5) {
-      nameHintEl.textContent = 'عدد الأسماء صحيح';
-      nameHintEl.classList.add('is-ok');
-      return;
-    }
-
-    nameHintEl.textContent =
-      count < 5
-        ? `باقي ${5 - count} للوصول إلى خمسة أسماء`
-        : 'الاسم أكثر من خمسة — احذف الزائد';
-    nameHintEl.classList.add('is-error');
   }
 
   async function initPage() {
@@ -176,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closedMessageEl.textContent = data.registration_closed_message;
       }
     } catch (error) {
-      // نسمح بعرض الصفحة؛ الخطأ يظهر عند محاولة التسجيل
       console.warn('تعذر تحميل الإعدادات', error);
     }
   }

@@ -1,6 +1,11 @@
 /**
  * دوال التحقق من المدخلات — قابلة لإعادة الاستخدام
+ * اسم اللاعب يُفحص هنا أيضاً حتى لا يعتمد الخادم على الواجهة فقط
  */
+
+const {
+  validateArabicPersonName,
+} = require('../../frontend/js/arabic-name');
 
 /** القيم المسموحة للرياضة */
 const ALLOWED_SPORTS = ['football', 'volleyball', 'both'];
@@ -18,50 +23,11 @@ function sanitizeText(value) {
 }
 
 /**
- * Full name must be exactly five parts (four names + tribe).
- * This is a tournament identity rule, not just a UI hint.
- * @param {unknown} fullName
- * @returns {{ valid: boolean, message?: string, value?: string }}
+ * Player names must be real Arabic names. This runs on the server so
+ * invalid values cannot reach PostgreSQL even if the UI is bypassed.
  */
 function validateFullName(fullName) {
-  const value = sanitizeText(fullName);
-
-  if (!value) {
-    return { valid: false, message: 'الاسم الكامل مطلوب' };
-  }
-
-  if (value.length < 10 || value.length > 120) {
-    return {
-      valid: false,
-      message: 'الاسم الكامل غير صالح',
-    };
-  }
-
-  // التسجيل بالعربية فقط — أي حرف إنجليزي يُرفض
-  if (/[A-Za-z]/.test(value)) {
-    return {
-      valid: false,
-      message: 'الاسم يجب أن يكون باللغة العربية فقط — غير مسموح بالإنجليزية',
-    };
-  }
-
-  if (!/^[\u0600-\u06FF\u0750-\u077F\s]+$/.test(value)) {
-    return {
-      valid: false,
-      message: 'الاسم يجب أن يحتوي على حروف عربية فقط',
-    };
-  }
-
-  const parts = value.split(' ').filter(Boolean);
-  if (parts.length !== 5) {
-    return {
-      valid: false,
-      message:
-        'يجب إدخال خمسة أسماء بالضبط: أربعة أسماء ثم القبيلة (مثال: عبدالرحمن فهد سالم علي الزيدي)',
-    };
-  }
-
-  return { valid: true, value };
+  return validateArabicPersonName(fullName);
 }
 
 /**

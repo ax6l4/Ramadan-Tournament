@@ -82,15 +82,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  const manualNameInput = document.getElementById('manual_full_name');
+  const manualNameHint = document.getElementById('manual-name-hint');
+
+  manualNameInput?.addEventListener('input', () => {
+    if (!manualNameHint) return;
+    const raw = String(manualNameInput.value || '');
+    manualNameHint.classList.remove('is-ok', 'is-error');
+    if (!raw.trim()) {
+      manualNameHint.textContent = 'اكتب اسماً عربياً حقيقياً';
+      return;
+    }
+    const result = ArabicNameValidator.validateArabicPersonName(raw);
+    manualNameHint.textContent = result.valid ? 'الاسم صحيح' : result.message;
+    manualNameHint.classList.toggle('is-ok', result.valid);
+    manualNameHint.classList.toggle('is-error', !result.valid);
+  });
+
   document.getElementById('manual-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     hideAlert(alertBox);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const nameCheck = ArabicNameValidator.validateArabicPersonName(
+      String(formData.get('full_name') || '')
+    );
+
+    if (!nameCheck.valid) {
+      showAlert(alertBox, nameCheck.message, 'error');
+      return;
+    }
 
     const payload = {
-      full_name: String(formData.get('full_name') || '').trim(),
+      full_name: nameCheck.value,
       phone: String(formData.get('phone') || '').trim(),
       is_team_leader: formData.get('is_team_leader') === 'yes',
       sport: String(formData.get('sport') || ''),
