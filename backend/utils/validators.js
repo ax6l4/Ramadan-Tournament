@@ -37,11 +37,18 @@ function validateFullName(fullName) {
     };
   }
 
-  // منع أرقام أو رموز غير مناسبة في الاسم
-  if (!/^[\u0600-\u06FFa-zA-Z\s]+$/.test(value)) {
+  // التسجيل بالعربية فقط — أي حرف إنجليزي يُرفض
+  if (/[A-Za-z]/.test(value)) {
     return {
       valid: false,
-      message: 'الاسم يجب أن يحتوي على حروف عربية أو إنجليزية فقط',
+      message: 'الاسم يجب أن يكون باللغة العربية فقط — غير مسموح بالإنجليزية',
+    };
+  }
+
+  if (!/^[\u0600-\u06FF\u0750-\u077F\s]+$/.test(value)) {
+    return {
+      valid: false,
+      message: 'الاسم يجب أن يحتوي على حروف عربية فقط',
     };
   }
 

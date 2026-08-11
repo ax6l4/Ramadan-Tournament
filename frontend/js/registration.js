@@ -50,6 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const nameParts = payload.full_name.split(/\s+/).filter(Boolean);
 
+    if (/[A-Za-z]/.test(payload.full_name)) {
+      showAlert(
+        alertBox,
+        'الاسم يجب أن يكون باللغة العربية فقط — غير مسموح بالإنجليزية',
+        'error'
+      );
+      fullNameInput?.focus();
+      return;
+    }
+
     if (nameParts.length !== 5) {
       showAlert(
         alertBox,
@@ -139,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (count === 0) {
       nameHintEl.textContent =
-        'خمسة أسماء بالضبط — مثال: عبدالرحمن فهد سالم علي الزيدي';
+        'خمسة أسماء عربية بالضبط — غير مسموح بالإنجليزية';
       return;
     }
 

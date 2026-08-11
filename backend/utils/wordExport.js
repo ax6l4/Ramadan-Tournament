@@ -1,7 +1,6 @@
 /**
- * Builds a professional Word (.docx) registration report.
- * Layout uses stacked labeled paragraphs (no tables) so Arabic RTL
- * names render reliably in Microsoft Word.
+ * تقرير تسجيل اللاعبين بصيغة Word
+ * الصفحة أفقية (عرض) والنصوص عربية RTL بدون جداول
  */
 
 const {
@@ -11,19 +10,18 @@ const {
   Header,
   Footer,
   Packer,
+  PageOrientation,
   Paragraph,
+  TabStopType,
   TextRun,
 } = require('docx');
 
 const ARABIC_FONT = 'Arial';
 
-/**
- * Maps stored sport codes to the English labels requested in the export.
- */
 function formatSport(sport) {
-  if (sport === 'football') return 'Football';
-  if (sport === 'volleyball') return 'Volleyball';
-  if (sport === 'both') return 'Football & Volleyball';
+  if (sport === 'football') return 'كرة قدم';
+  if (sport === 'volleyball') return 'كرة طائرة';
+  if (sport === 'both') return 'كرة قدم وكرة طائرة';
   return String(sport || '-');
 }
 
@@ -45,24 +43,14 @@ function paragraph(children, extra = {}) {
     alignment: extra.alignment || AlignmentType.RIGHT,
     spacing: extra.spacing || { after: 120 },
     border: extra.border,
+    tabStops: extra.tabStops,
     children,
   });
 }
 
-function labeledField(label, value) {
-  return [
-    paragraph([textRun(label, { bold: true, size: 22, color: '555555' })], {
-      spacing: { before: 80, after: 60 },
-    }),
-    paragraph([textRun(value, { size: 28 })], {
-      spacing: { after: 220 },
-    }),
-  ];
-}
-
 function divider() {
   return paragraph([], {
-    spacing: { before: 160, after: 240 },
+    spacing: { before: 80, after: 160 },
     border: {
       bottom: {
         color: '111111',
@@ -75,17 +63,39 @@ function divider() {
 }
 
 /**
- * @param {object} options
- * @param {Array} options.players
- * @param {string} [options.brandName]
- * @returns {Promise<Buffer>}
+ * صف أفقي واحد لكل لاعب: الاسم | قائد الفريق | الرياضة
+ * يعتمد على عرض الصفحة الأفقي ومواضع الجدولة
  */
+function playerRow(player, index) {
+  const captain = player.is_team_leader ? 'نعم' : 'لا';
+  const sport = formatSport(player.sport);
+
+  return paragraph(
+    [
+      textRun(`اللاعب ${index + 1}`, { bold: true, size: 24 }),
+      new TextRun({ text: '\t', font: ARABIC_FONT }),
+      textRun('اسم اللاعب: ', { bold: true, size: 22, color: '555555' }),
+      textRun(player.full_name || '-', { size: 24 }),
+      new TextRun({ text: '\t', font: ARABIC_FONT }),
+      textRun('قائد فريق: ', { bold: true, size: 22, color: '555555' }),
+      textRun(captain, { size: 24 }),
+      new TextRun({ text: '\t', font: ARABIC_FONT }),
+      textRun('الرياضة: ', { bold: true, size: 22, color: '555555' }),
+      textRun(sport, { size: 24 }),
+    ],
+    {
+      spacing: { before: 140, after: 140 },
+      tabStops: [
+        { type: TabStopType.RIGHT, position: 2200 },
+        { type: TabStopType.RIGHT, position: 9000 },
+        { type: TabStopType.RIGHT, position: 12800 },
+      ],
+    }
+  );
+}
+
 async function buildPlayersDocx({ players, brandName }) {
   const generatedAt = new Date();
-  const dateEn = generatedAt.toLocaleString('en-GB', {
-    dateStyle: 'full',
-    timeStyle: 'short',
-  });
   const dateAr = generatedAt.toLocaleString('ar-OM', {
     dateStyle: 'full',
     timeStyle: 'short',
@@ -93,57 +103,63 @@ async function buildPlayersDocx({ players, brandName }) {
   const brand = brandName || 'فريق الروضة';
 
   const children = [
-    paragraph([textRun('Ramadan Tournament Player Registration', { bold: true, size: 40 })], {
+    paragraph([textRun('تسجيل لاعبي المسابقات الرمضانية', { bold: true, size: 40 })], {
       alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
+      spacing: { after: 80 },
     }),
     paragraph([textRun(brand, { bold: true, size: 28 })], {
       alignment: AlignmentType.CENTER,
       spacing: { after: 80 },
     }),
     paragraph(
-      [textRun(`Generated: ${dateEn}`, { size: 20, color: '555555', italics: true })],
+      [textRun(`تاريخ الإصدار: ${dateAr}`, { size: 20, color: '555555' })],
       { alignment: AlignmentType.CENTER, spacing: { after: 40 } }
     ),
     paragraph(
-      [textRun(`تاريخ الإصدار: ${dateAr}`, { size: 20, color: '555555' })],
-      { alignment: AlignmentType.CENTER, spacing: { after: 80 } }
-    ),
-    paragraph(
-      [textRun(`Total registered players: ${players.length}`, { size: 22 })],
-      { alignment: AlignmentType.CENTER, spacing: { after: 200 } }
+      [textRun(`عدد اللاعبين المسجلين: ${players.length}`, { size: 22 })],
+      { alignment: AlignmentType.CENTER, spacing: { after: 160 } }
     ),
     divider(),
   ];
 
   if (players.length === 0) {
     children.push(
-      paragraph([textRun('No players are registered yet.', { italics: true, size: 24 })], {
+      paragraph([textRun('لا يوجد لاعبون مسجلون حالياً.', { italics: true, size: 24 })], {
         alignment: AlignmentType.CENTER,
       })
     );
   } else {
-    players.forEach((player, index) => {
-      children.push(
-        paragraph(
-          [textRun(`Player ${index + 1}`, { bold: true, size: 26, color: '000000' })],
-          { spacing: { before: 80, after: 180 } }
-        ),
-        ...labeledField('Player Name:', player.full_name || '-'),
-        ...labeledField('Team Captain:', player.is_team_leader ? 'Yes' : 'No'),
-        ...labeledField('Sports:', formatSport(player.sport))
-      );
+    children.push(
+      paragraph(
+        [
+          textRun('الرقم', { bold: true, size: 20, color: '555555' }),
+          new TextRun({ text: '\t', font: ARABIC_FONT }),
+          textRun('اسم اللاعب', { bold: true, size: 20, color: '555555' }),
+          new TextRun({ text: '\t', font: ARABIC_FONT }),
+          textRun('قائد فريق', { bold: true, size: 20, color: '555555' }),
+          new TextRun({ text: '\t', font: ARABIC_FONT }),
+          textRun('الرياضة', { bold: true, size: 20, color: '555555' }),
+        ],
+        {
+          spacing: { after: 80 },
+          tabStops: [
+            { type: TabStopType.RIGHT, position: 2200 },
+            { type: TabStopType.RIGHT, position: 9000 },
+            { type: TabStopType.RIGHT, position: 12800 },
+          ],
+        }
+      )
+    );
 
-      if (index < players.length - 1) {
-        children.push(divider());
-      }
+    players.forEach((player, index) => {
+      children.push(playerRow(player, index));
     });
   }
 
   const document = new Document({
     creator: brand,
-    title: 'Ramadan Tournament Player Registration',
-    description: 'Official player registration export',
+    title: 'تسجيل لاعبي المسابقات الرمضانية',
+    description: 'كشف رسمي بتسجيل اللاعبين',
     styles: {
       default: {
         document: {
@@ -161,11 +177,14 @@ async function buildPlayersDocx({ players, brandName }) {
       {
         properties: {
           page: {
+            size: {
+              orientation: PageOrientation.LANDSCAPE,
+            },
             margin: {
-              top: 720,
-              bottom: 720,
-              left: 864,
-              right: 864,
+              top: 560,
+              bottom: 560,
+              left: 720,
+              right: 720,
             },
           },
         },
@@ -173,7 +192,7 @@ async function buildPlayersDocx({ players, brandName }) {
           default: new Header({
             children: [
               paragraph(
-                [textRun('Ramadan Tournament  ·  Official Registration Record', { size: 18, color: '666666' })],
+                [textRun('المسابقات الرمضانية — كشف التسجيل الرسمي', { size: 18, color: '666666' })],
                 { alignment: AlignmentType.CENTER, spacing: { after: 0 } }
               ),
             ],
@@ -183,7 +202,7 @@ async function buildPlayersDocx({ players, brandName }) {
           default: new Footer({
             children: [
               paragraph(
-                [textRun(`${brand} — Confidential tournament document`, { size: 16, color: '777777' })],
+                [textRun(`${brand} — وثيقة رسمية للبطولة`, { size: 16, color: '777777' })],
                 { alignment: AlignmentType.CENTER, spacing: { after: 0 } }
               ),
             ],
