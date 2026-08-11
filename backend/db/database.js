@@ -90,8 +90,11 @@ function createPgPool(databaseUrl) {
   const forceSslOff = process.env.PGSSL === 'false';
   const forceSslOn = process.env.PGSSL === 'true';
 
-  // Render يتطلب SSL غالباً للرابط الخارجي، وهو آمن أيضاً للداخلي
-  const useSsl = forceSslOn || (!forceSslOff && (isProduction || databaseUrl.includes('render.com')));
+  // Render: SSL مطلوب للرابط الخارجي (.render.com) ويُفعّل في الإنتاج
+  const looksLikeRender =
+    databaseUrl.includes('render.com') || isLikelyIncompleteRenderHost(databaseUrl);
+  const useSsl =
+    forceSslOn || (!forceSslOff && (isProduction || looksLikeRender));
 
   /** @type {import('pg').PoolConfig} */
   const poolConfig = {
@@ -99,6 +102,8 @@ function createPgPool(databaseUrl) {
     connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 30000,
     max: 10,
+    // IPv4 يقلل getaddrinfo ENOTFOUND على بعض شبكات Render
+    family: 4,
   };
 
   if (useSsl) {
@@ -130,6 +135,14 @@ function createPgPool(databaseUrl) {
  * تهيئة قاعدة البيانات حسب البيئة
  */
 async function initDatabase() {
+  const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+
+  if (isProduction && !resolveDatabaseUrl()) {
+    throw new Error(
+      'DATABASE_URL is required in production. Set it to the Render Postgres connection string.'
+    );
+  }
+
   if (usePostgres) {
     const databaseUrl = resolveDatabaseUrl();
 
@@ -174,7 +187,14 @@ async function initDatabase() {
     fs.mkdirSync(databaseDir, { recursive: true });
   }
 
-  const Database = require('better-sqlite3');
+  let Database;
+  try {
+    Database = require('better-sqlite3');
+  } catch (error) {
+    throw new Error(
+      'SQLite driver is unavailable. For Render, set DATABASE_URL to your PostgreSQL connection string.'
+    );
+  }
   sqliteDb = new Database(config.databasePath);
   sqliteDb.pragma('journal_mode = WAL');
   sqliteDb.pragma('foreign_keys = ON');

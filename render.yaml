@@ -1,7 +1,6 @@
-# نشر موقع فريق الروضة — رابط دائم يعمل حتى مع إغلاق اللابتوب
-#
-# مهم: خدمة الويب وقاعدة البيانات يجب أن تكونا في نفس المنطقة
-# وإلا يظهر الخطأ: getaddrinfo ENOTFOUND dpg-xxxxx-a
+# Web service + Postgres must be in the SAME region
+# otherwise DATABASE_URL internal host (dpg-xxxxx-a) causes:
+# getaddrinfo ENOTFOUND dpg-xxxxx-a
 
 services:
   - type: web
@@ -10,7 +9,7 @@ services:
     plan: free
     region: frankfurt
     buildCommand: npm install --prefix backend
-    startCommand: npm --prefix backend start
+    startCommand: node backend/server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -21,7 +20,6 @@ services:
         value: Abdul Rahman
       - key: ADMIN_PASSWORD
         value: Aa91141702
-      # Internal connection string (يعمل فقط إذا كانت الخدمة والـ DB في نفس المنطقة)
       - key: DATABASE_URL
         fromDatabase:
           name: fariq-alrawdha-db

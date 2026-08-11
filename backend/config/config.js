@@ -7,8 +7,8 @@
 const path = require('path');
 
 const config = {
-  // منفذ السيرفر
-  port: Number(process.env.PORT) || 3000,
+  // Render يمرّر PORT — يجب الاستماع عليه في الإنتاج
+  port: Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3000,
 
   // بيئة التشغيل: development | production
   nodeEnv: process.env.NODE_ENV || 'development',
