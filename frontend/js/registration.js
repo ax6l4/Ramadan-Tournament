@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nameHintEl.classList.remove('is-ok', 'is-error');
 
     if (!raw.trim()) {
-      nameHintEl.textContent = 'اكتب اسماً عربياً حقيقياً مثل: محمد أحمد الكندي';
+      nameHintEl.textContent = 'اكتب الاسم الكامل من خمسة أسماء عربية';
       return;
     }
 

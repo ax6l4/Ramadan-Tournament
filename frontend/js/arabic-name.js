@@ -1,7 +1,7 @@
 /**
  * Shared Arabic person-name validator (browser + Node).
- * Rejects English, digits, symbols, jokes, and placeholder names
- * before any database insert.
+ * Requires exactly five Arabic words so fake or partial names never
+ * reach PostgreSQL.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -10,24 +10,17 @@
     root.ArabicNameValidator = factory();
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const INVALID_MESSAGE = 'يرجى كتابة اسم عربي حقيقي';
-  const MIN_LETTERS = 3;
-  const MAX_LENGTH = 50;
-  const MIN_WORDS = 2;
-  const MAX_WORDS = 6;
+  const MSG_ENGLISH = 'يسمح بإدخال الأحرف العربية فقط';
+  const MSG_FIVE_NAMES = 'يجب كتابة الاسم الكامل من خمسة أسماء';
+  const MSG_INVALID = 'الرجاء إدخال اسم حقيقي صحيح';
 
-  // Letters only: ء to ي, excluding tatweel and Arabic digits
+  const REQUIRED_WORDS = 5;
+  const MIN_WORD_LENGTH = 2;
+  const MAX_LENGTH = 60;
+
   const ARABIC_LETTERS = '\u0621-\u063A\u0641-\u064A';
   const NAME_PATTERN = new RegExp('^[' + ARABIC_LETTERS + '\\s]+$');
-  const LETTER_PATTERN = new RegExp('[' + ARABIC_LETTERS + ']', 'g');
-
-  const ALLOWED_PARTICLES = {
-    بن: true,
-    بنت: true,
-    ابن: true,
-    آل: true,
-    ال: true,
-  };
+  const WORD_PATTERN = new RegExp('^[' + ARABIC_LETTERS + ']{' + MIN_WORD_LENGTH + ',}$');
 
   const BLOCKED_NAMES = {
     تست: true,
@@ -49,7 +42,6 @@
     حقير: true,
     قذر: true,
     مستخدم: true,
-    ادمنيستريتور: true,
   };
 
   function sanitizeName(value) {
@@ -62,60 +54,41 @@
       .replace(/[\u0640\u064B-\u0652]/g, '');
   }
 
-  function letterCount(value) {
-    const matches = value.match(LETTER_PATTERN);
-    return matches ? matches.length : 0;
-  }
-
   function hasRepeatedChars(value) {
     return /(.)\1{2,}/.test(value.replace(/ /g, ''));
-  }
-
-  function looksRandom(words) {
-    return words.some((word) => {
-      if (ALLOWED_PARTICLES[word]) {
-        return false;
-      }
-      const unique = new Set(word.split('')).size;
-      return word.length >= 6 && unique <= 2;
-    });
   }
 
   function validateArabicPersonName(rawValue) {
     const value = sanitizeName(rawValue);
 
     if (!value) {
-      return { valid: false, message: INVALID_MESSAGE, value: '' };
+      return { valid: false, message: MSG_INVALID, value: '' };
     }
 
-    if (/[A-Za-z0-9]/.test(value) || !NAME_PATTERN.test(value)) {
-      return { valid: false, message: INVALID_MESSAGE, value };
+    if (/[A-Za-z]/.test(value)) {
+      return { valid: false, message: MSG_ENGLISH, value };
     }
 
-    if (letterCount(value) < MIN_LETTERS || value.length > MAX_LENGTH) {
-      return { valid: false, message: INVALID_MESSAGE, value };
+    if (/[0-9\u0660-\u0669]/.test(value) || !NAME_PATTERN.test(value)) {
+      return { valid: false, message: MSG_ENGLISH, value };
     }
 
     const words = value.split(' ').filter(Boolean);
-    if (words.length < MIN_WORDS || words.length > MAX_WORDS) {
-      return { valid: false, message: INVALID_MESSAGE, value };
+    if (words.length !== REQUIRED_WORDS) {
+      return { valid: false, message: MSG_FIVE_NAMES, value };
     }
 
-    if (hasRepeatedChars(value) || looksRandom(words)) {
-      return { valid: false, message: INVALID_MESSAGE, value };
+    if (value.length > MAX_LENGTH) {
+      return { valid: false, message: MSG_INVALID, value };
     }
 
-    const compact = value.replace(/ /g, '');
-    if (BLOCKED_NAMES[compact]) {
-      return { valid: false, message: INVALID_MESSAGE, value };
+    if (hasRepeatedChars(value)) {
+      return { valid: false, message: MSG_INVALID, value };
     }
 
     for (const word of words) {
-      if (BLOCKED_NAMES[word]) {
-        return { valid: false, message: INVALID_MESSAGE, value };
-      }
-      if (!ALLOWED_PARTICLES[word] && word.length < 2) {
-        return { valid: false, message: INVALID_MESSAGE, value };
+      if (!WORD_PATTERN.test(word) || BLOCKED_NAMES[word]) {
+        return { valid: false, message: MSG_INVALID, value };
       }
     }
 
@@ -123,7 +96,9 @@
   }
 
   return {
-    INVALID_MESSAGE,
+    MSG_ENGLISH,
+    MSG_FIVE_NAMES,
+    MSG_INVALID,
     validateArabicPersonName,
     sanitizeName,
   };

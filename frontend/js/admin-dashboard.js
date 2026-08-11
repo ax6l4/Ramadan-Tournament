@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const raw = String(manualNameInput.value || '');
     manualNameHint.classList.remove('is-ok', 'is-error');
     if (!raw.trim()) {
-      manualNameHint.textContent = 'اكتب اسماً عربياً حقيقياً';
+      manualNameHint.textContent = 'اكتب الاسم الكامل من خمسة أسماء عربية';
       return;
     }
     const result = ArabicNameValidator.validateArabicPersonName(raw);
