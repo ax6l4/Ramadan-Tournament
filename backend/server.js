@@ -1,6 +1,7 @@
 /**
- * نقطة تشغيل سيرفر فريق الروضة
- * يعمل محلياً بـ SQLite وعلى الاستضافة بـ PostgreSQL
+ * Application entry point.
+ * Database is initialized before listening so Render health checks
+ * do not succeed against a half-started service.
  */
 
 const path = require('path');
@@ -50,6 +51,7 @@ async function startServer() {
   app.use(notFoundHandler);
   app.use(errorHandler);
 
+  // Bind 0.0.0.0 so Render can reach the process on process.env.PORT
   app.listen(config.port, '0.0.0.0', () => {
     console.log('========================================');
     console.log('  فريق الروضة — موقع التسجيل');

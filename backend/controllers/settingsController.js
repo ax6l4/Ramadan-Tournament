@@ -1,5 +1,7 @@
 /**
- * منطق إعدادات الموقع
+ * Site settings.
+ * registration_open is the kill-switch used by both the public form
+ * and the admin "open / lock site" buttons.
  */
 
 const {

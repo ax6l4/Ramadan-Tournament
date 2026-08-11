@@ -1,6 +1,5 @@
-# Web service + Postgres must be in the SAME region
-# otherwise DATABASE_URL internal host (dpg-xxxxx-a) causes:
-# getaddrinfo ENOTFOUND dpg-xxxxx-a
+# Web service and Postgres must share the same region.
+# A mismatched region makes the internal host (dpg-xxxxx-a) unresolvable.
 
 services:
   - type: web
@@ -17,9 +16,9 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_USERNAME
-        value: Abdul Rahman
+        sync: false
       - key: ADMIN_PASSWORD
-        value: Aa91141702
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: fariq-alrawdha-db

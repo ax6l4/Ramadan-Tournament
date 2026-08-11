@@ -1,19 +1,28 @@
 /**
- * وسيط التحقق من صلاحية الأدمن عبر JWT
+ * Admin authentication middleware.
+ * JWT is used instead of sessions so the API stays stateless on Render.
  */
 
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 
+function readBearerToken(req) {
+  const authHeader = req.headers.authorization || '';
+  const [scheme, token] = authHeader.split(' ');
+  if (scheme !== 'Bearer' || !token) {
+    return null;
+  }
+  return token;
+}
+
 /**
- * حماية المسارات التي تتطلب تسجيل دخول أدمن
+ * Blocks the request unless a valid admin token is present.
  */
 function requireAdmin(req, res, next) {
   try {
-    const authHeader = req.headers.authorization || '';
-    const [scheme, token] = authHeader.split(' ');
+    const token = readBearerToken(req);
 
-    if (scheme !== 'Bearer' || !token) {
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'يجب تسجيل الدخول للوصول إلى هذه الصفحة',
@@ -21,8 +30,6 @@ function requireAdmin(req, res, next) {
     }
 
     const decoded = jwt.verify(token, config.jwtSecret);
-
-    // إرفاق بيانات الأدمن بالطلب لاستخدامها لاحقاً
     req.admin = {
       id: decoded.id,
       email: decoded.email,
@@ -37,6 +44,28 @@ function requireAdmin(req, res, next) {
   }
 }
 
+/**
+ * Used on public registration: if an admin token exists, the request
+ * can bypass the "registration closed" lock. Invalid tokens are ignored.
+ */
+function optionalAdmin(req, res, next) {
+  try {
+    const token = readBearerToken(req);
+    if (token) {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      req.admin = {
+        id: decoded.id,
+        email: decoded.email,
+      };
+    }
+  } catch (error) {
+    req.admin = undefined;
+  }
+
+  return next();
+}
+
 module.exports = {
   requireAdmin,
+  optionalAdmin,
 };

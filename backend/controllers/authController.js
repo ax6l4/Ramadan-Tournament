@@ -1,5 +1,7 @@
 /**
- * منطق المصادقة — تسجيل دخول الأدمن
+ * Admin login.
+ * Failure messages stay generic so attackers cannot probe whether
+ * a username exists.
  */
 
 const bcrypt = require('bcrypt');

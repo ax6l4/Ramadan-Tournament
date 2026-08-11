@@ -18,8 +18,8 @@ function sanitizeText(value) {
 }
 
 /**
- * التحقق من الاسم الكامل: أربعة أسماء + القبيلة = 5 أجزاء بالضبط
- * مثال صحيح: عبدالرحمن فهد سالم علي الزيدي
+ * Full name must be exactly five parts (four names + tribe).
+ * This is a tournament identity rule, not just a UI hint.
  * @param {unknown} fullName
  * @returns {{ valid: boolean, message?: string, value?: string }}
  */

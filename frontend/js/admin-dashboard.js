@@ -284,59 +284,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /**
-   * تنزيل قائمة اللاعبين كملف CSV يفتح على Excel
-   * يُحفظ مباشرة على جهاز الأدمن
+   * Downloads the server-generated Word report. Binary responses are
+   * fetched directly because the JSON API helper cannot parse .docx files.
    */
   async function downloadPlayersFile() {
     try {
-      const result = await apiRequest('/players', {
+      const response = await fetch('/api/players/export/docx', {
         headers: authHeaders(),
       });
 
-      const players = result.data.players || [];
-      if (players.length === 0) {
-        showAlert(alertBox, 'لا يوجد لاعبون لتنزيلهم', 'error');
-        return;
+      if (!response.ok) {
+        let message = 'تعذر تنزيل ملف Word';
+        try {
+          const payload = await response.json();
+          message = payload.message || message;
+        } catch (parseError) {
+          // Keep the fallback message when the body is not JSON.
+        }
+        throw new Error(message);
       }
 
-      const headers = ['اسم اللاعب', 'قائد فريق', 'الرياضة'];
-
-      const sportLabel = {
-        football: 'كرة قدم',
-        volleyball: 'كرة طائرة',
-        both: 'كرة قدم وكرة طائرة',
-      };
-
-      const rows = players.map((player) => [
-        player.full_name,
-        player.is_team_leader ? 'نعم' : 'لا',
-        sportLabel[player.sport] || player.sport,
-      ]);
-
-      const csvContent = [headers, ...rows]
-        .map((row) =>
-          row
-            .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
-            .join(',')
-        )
-        .join('\n');
-
-      // BOM لعرض العربية بشكل صحيح في Excel
-      const blob = new Blob([`\uFEFF${csvContent}`], {
-        type: 'text/csv;charset=utf-8;',
-      });
-
+      const blob = await response.blob();
       const dateStamp = new Date().toISOString().slice(0, 10);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `قائمة-اللاعبين-${dateStamp}.csv`;
+      link.download = `ramadan-tournament-players-${dateStamp}.docx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
 
-      showAlert(alertBox, 'تم تنزيل الملف على جهازك', 'success');
+      showAlert(alertBox, 'تم تنزيل ملف Word على جهازك', 'success');
     } catch (error) {
       showAlert(alertBox, error.message, 'error');
     }

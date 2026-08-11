@@ -1,7 +1,7 @@
 /**
- * طبقة الوصول للبيانات
- * - محلياً: SQLite (better-sqlite3)
- * - على الاستضافة: PostgreSQL عبر process.env.DATABASE_URL
+ * Data access layer.
+ * SQLite keeps local setup simple; PostgreSQL is required on Render
+ * because the filesystem is ephemeral and cannot store lasting .db files.
  */
 
 const fs = require('fs');

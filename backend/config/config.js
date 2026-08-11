@@ -1,33 +1,41 @@
 /**
- * إعدادات التطبيق المركزية
- * Central application configuration
- * القيم الحساسة تُقرأ من متغيرات البيئة عند النشر
+ * Central configuration.
+ * Secrets must come from environment variables in production so they
+ * are never committed to GitHub.
  */
 
 const path = require('path');
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+const isProduction = nodeEnv === 'production';
+
+function envOrDev(name, devFallback) {
+  if (process.env[name]) {
+    return process.env[name];
+  }
+
+  if (isProduction) {
+    throw new Error(`${name} must be set in production`);
+  }
+
+  return devFallback;
+}
+
 const config = {
-  // Render يمرّر PORT — يجب الاستماع عليه في الإنتاج
   port: Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3000,
+  nodeEnv,
+  isProduction,
 
-  // بيئة التشغيل: development | production
-  nodeEnv: process.env.NODE_ENV || 'development',
-
-  // مفتاح توقيع JWT — غيّره في الإنتاج عبر متغير البيئة
-  jwtSecret: process.env.JWT_SECRET || 'ramadan-tournament-dev-secret-change-me',
-
-  // مدة صلاحية توكن الأدمن
+  jwtSecret: envOrDev('JWT_SECRET', 'dev-only-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
 
-  // مسار ملف قاعدة البيانات SQLite
   databasePath:
     process.env.DATABASE_PATH ||
     path.join(__dirname, '..', '..', 'database', 'tournament.db'),
 
-  // بيانات الأدمن الافتراضي
   defaultAdmin: {
-    username: process.env.ADMIN_USERNAME || 'Abdul Rahman',
-    password: process.env.ADMIN_PASSWORD || 'Aa91141702',
+    username: envOrDev('ADMIN_USERNAME', 'admin'),
+    password: envOrDev('ADMIN_PASSWORD', 'changeme'),
   },
 };
 

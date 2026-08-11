@@ -1,5 +1,7 @@
 /**
- * منطق إدارة اللاعبين
+ * Player registration business rules:
+ * public users can register only while registration is open;
+ * admins can always add players; five-part names must stay unique.
  */
 
 const {
@@ -11,6 +13,7 @@ const {
   deleteAllPlayers,
 } = require('../db/database');
 const { validatePlayerPayload } = require('../utils/validators');
+const { buildPlayersDocx } = require('../utils/wordExport');
 
 function formatPlayer(row) {
   const isLeader =
@@ -167,11 +170,40 @@ async function exportPlayers(req, res, next) {
   }
 }
 
+/**
+ * Streams a formatted Word document. Generated on the server so Arabic
+ * RTL text is encoded correctly instead of relying on the browser.
+ */
+async function exportPlayersDocx(req, res, next) {
+  try {
+    const players = (await listPlayers()).map(formatPlayer);
+    const titleSetting = await getSetting('site_title');
+    const buffer = await buildPlayersDocx({
+      players,
+      brandName: titleSetting?.value || 'فريق الروضة',
+    });
+
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ramadan-tournament-players-${dateStamp}.docx"`
+    );
+    return res.send(Buffer.from(buffer));
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   createPlayer,
   getPlayers,
   deletePlayer,
   deleteAllPlayers: deleteAllPlayersHandler,
   exportPlayers,
+  exportPlayersDocx,
   formatPlayer,
 };
